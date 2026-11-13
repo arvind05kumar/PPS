@@ -1,0 +1,93 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #0e0e0e;
+  --foreground: #f6efe6;
+  --card-bg: #141414;
+  --card-border: #28241d;
+  --accent-gold: #c9a24b;
+}
+
+html:not(.dark) {
+  --background: #fbf7f2;
+  --foreground: #1c1917;
+  --card-bg: #f4ece1;
+  --card-border: #e3d3c2;
+  --accent-gold: #9e792a;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  overflow-x: hidden;
+}
+
+/* Custom Gold Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2a241b;
+  border-radius: 4px;
+  border: 1px solid rgba(201, 162, 75, 0.25);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #c9a24b;
+}
+
+/* Selection Color */
+::selection {
+  background-color: #c9a24b;
+  color: #0a0a0a;
+}
+
+/* Subtle Film Grain Utility */
+.film-grain {
+  position: relative;
+}
+
+.film-grain::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
+
+/* Shimmer Golden Text */
+.gold-shimmer {
+  background: linear-gradient(
+    90deg,
+    #c9a24b 0%,
+    #f7e8b6 25%,
+    #c9a24b 50%,
+    #dfbe6f 75%,
+    #c9a24b 100%
+  );
+  background-size: 200% auto;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: shine 4s linear infinite;
+}
+
+@keyframes shine {
+  to {
+    background-position: 200% center;
+  }
+}
+
