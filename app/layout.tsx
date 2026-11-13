@@ -4,7 +4,6 @@ import {
   Playfair_Display,
   Inter,
   Great_Vibes,
-  Noto_Serif_Devanagari,
 } from "next/font/google";
 import "./globals.css";
 import { siteConfig } from "@/config/site";
@@ -22,35 +21,26 @@ import { ParticlesBackground } from "@/components/ui/ParticlesBackground";
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
   variable: "--font-cormorant",
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
   variable: "--font-playfair",
-  weight: ["400", "500", "600", "700", "800"],
   display: "swap",
 });
 
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
-  weight: ["300", "400", "500", "600", "700"],
   display: "swap",
 });
 
 const greatVibes = Great_Vibes({
   subsets: ["latin"],
   variable: "--font-great-vibes",
-  weight: ["400"],
-  display: "swap",
-});
-
-const devanagari = Noto_Serif_Devanagari({
-  subsets: ["devanagari"],
-  variable: "--font-devanagari",
-  weight: ["400", "500", "600", "700"],
+  weight: "400",
   display: "swap",
 });
 
@@ -192,7 +182,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`dark ${cormorant.variable} ${playfair.variable} ${inter.variable} ${greatVibes.variable} ${devanagari.variable}`}
+      className={`dark ${cormorant.variable} ${playfair.variable} ${inter.variable} ${greatVibes.variable}`}
     >
       <head>
         <script

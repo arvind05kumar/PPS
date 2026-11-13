@@ -3,9 +3,12 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Logo } from "@/components/ui/Logo";
+import { useAudio } from "@/components/providers/AudioProvider";
+import { Volume2 } from "lucide-react";
 
 export function Preloader() {
   const [loading, setLoading] = useState(true);
+  const { playMusic } = useAudio();
 
   useEffect(() => {
     // Check if preloader has already been shown in this tab session
@@ -18,14 +21,17 @@ export function Preloader() {
     const timer = setTimeout(() => {
       setLoading(false);
       sessionStorage.setItem("pps_preloaded", "true");
+      // Attempt to play music when intro completes
+      playMusic();
     }, 3800);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [playMusic]);
 
-  const handleSkip = () => {
+  const handleDismiss = () => {
     setLoading(false);
     sessionStorage.setItem("pps_preloaded", "true");
+    playMusic();
   };
 
   return (
@@ -36,7 +42,8 @@ export function Preloader() {
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 1.0, ease: [0.77, 0, 0.175, 1] }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-studio-dark overflow-hidden pointer-events-auto"
+          onClick={handleDismiss}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-studio-dark overflow-hidden cursor-pointer select-none"
         >
           {/* Top Curtain */}
           <motion.div
@@ -74,7 +81,16 @@ export function Preloader() {
                   transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
                   style={{ transformOrigin: "50px 50px" }}
                 >
-                  <circle cx="50" cy="50" r="46" stroke="#c9a24b" strokeWidth="1" strokeDasharray="4 6" fill="none" opacity="0.4" />
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="46"
+                    stroke="#c9a24b"
+                    strokeWidth="1"
+                    strokeDasharray="4 6"
+                    fill="none"
+                    opacity="0.4"
+                  />
                 </motion.g>
               </svg>
 
@@ -94,17 +110,24 @@ export function Preloader() {
               />
             </div>
 
-            {/* Skip Button for quick user control */}
-            <button
-              onClick={handleSkip}
-              className="mt-6 text-[11px] font-sans tracking-[0.25em] uppercase text-studio-ivoryMuted hover:text-studio-cream transition-colors opacity-70 hover:opacity-100"
-            >
-              Skip Intro →
-            </button>
+            {/* Action Buttons & Hints */}
+            <div className="mt-6 flex flex-col items-center gap-2">
+              <button
+                type="button"
+                onClick={handleDismiss}
+                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-studio-gold/30 bg-studio-dark/60 text-studio-cream hover:bg-studio-gold/10 hover:border-studio-gold transition-all text-[11px] font-sans tracking-[0.2em] uppercase"
+              >
+                <Volume2 className="w-3.5 h-3.5 text-studio-gold" />
+                <span>Enter Experience ♫</span>
+              </button>
+
+              <span className="text-[10px] font-sans tracking-[0.25em] uppercase text-studio-ivoryMuted/60">
+                Click anywhere or scroll to explore
+              </span>
+            </div>
           </div>
         </motion.div>
       )}
     </AnimatePresence>
   );
 }
-

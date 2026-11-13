@@ -1,94 +1,113 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+} from "react";
 
 interface AudioContextType {
   isPlaying: boolean;
   toggleSound: () => void;
-  playMusic: () => void;
+  playMusic: () => Promise<boolean>;
   pauseMusic: () => void;
+  hasUserInteracted: boolean;
 }
 
 const AudioContext = createContext<AudioContextType>({
   isPlaying: false,
   toggleSound: () => {},
-  playMusic: () => {},
+  playMusic: async () => false,
   pauseMusic: () => {},
+  hasUserInteracted: false,
 });
 
 export function AudioProvider({ children }: { children: React.ReactNode }) {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const fadeIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const hasAutoPlayedRef = useRef(false);
+  const isPlayingRef = useRef(false);
   const userExplicitlyPausedRef = useRef(false);
 
-  // Initialize audio instance
+  // Keep ref in sync with state
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    isPlayingRef.current = isPlaying;
+  }, [isPlaying]);
 
-    const audio = new Audio();
-    audio.loop = true;
-    audio.preload = "auto";
-    audio.volume = 0.35; // gentle, romantic volume
-
-    const canPlayM4A = audio.canPlayType("audio/mp4");
-    if (canPlayM4A) {
-      audio.src = "/audio/wedding-instrumental.m4a";
-    } else {
-      audio.src = "/audio/wedding-instrumental.ogg";
-    }
-
-    audioRef.current = audio;
-
-    return () => {
-      if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
-      audio.pause();
-      audio.src = "";
-    };
-  }, []);
-
+  // Smooth fade-in
   const fadeIn = useCallback((audio: HTMLAudioElement) => {
     if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
-    audio.volume = 0.05;
-    const playPromise = audio.play();
+    
+    // Set low initial volume if supported
+    try {
+      audio.volume = 0.05;
+    } catch {
+      // iOS Safari ignores volume property, which is normal
+    }
 
+    const playPromise = audio.play();
     if (playPromise !== undefined) {
-      playPromise
+      return playPromise
         .then(() => {
           setIsPlaying(true);
+          isPlayingRef.current = true;
+
+          // Ramp up volume gradually to 35% for gentle ambiance
           fadeIntervalRef.current = setInterval(() => {
-            if (audio.volume < 0.35) {
-              audio.volume = Math.min(0.35, audio.volume + 0.05);
-            } else {
+            try {
+              if (audio.volume < 0.35) {
+                audio.volume = Math.min(0.35, Number((audio.volume + 0.05).toFixed(2)));
+              } else {
+                if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
+              }
+            } catch {
               if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
             }
-          }, 120);
+          }, 100);
+          return true;
         })
-        .catch(() => {
-          // Browser prevented autoplay before gesture
+        .catch((err) => {
+          // Autoplay blocked by browser policy until user gesture
+          console.debug("Audio play awaiting direct user gesture:", err?.message || err);
+          return false;
         });
     }
+    return Promise.resolve(false);
   }, []);
 
+  // Smooth fade-out
   const fadeOut = useCallback((audio: HTMLAudioElement) => {
     if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
 
     fadeIntervalRef.current = setInterval(() => {
-      if (audio.volume > 0.05) {
-        audio.volume = Math.max(0, audio.volume - 0.05);
-      } else {
+      try {
+        if (audio.volume > 0.05) {
+          audio.volume = Math.max(0, Number((audio.volume - 0.05).toFixed(2)));
+        } else {
+          if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
+          audio.pause();
+          setIsPlaying(false);
+          isPlayingRef.current = false;
+        }
+      } catch {
         if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
         audio.pause();
         setIsPlaying(false);
+        isPlayingRef.current = false;
       }
-    }, 80);
+    }, 60);
   }, []);
 
-  const playMusic = useCallback(() => {
+  const playMusic = useCallback(async (): Promise<boolean> => {
     const audio = audioRef.current;
-    if (!audio) return;
-    fadeIn(audio);
+    if (!audio) return false;
+    userExplicitlyPausedRef.current = false;
+    setHasUserInteracted(true);
+    return await fadeIn(audio);
   }, [fadeIn]);
 
   const pauseMusic = useCallback(() => {
@@ -99,50 +118,143 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   }, [fadeOut]);
 
   const toggleSound = useCallback(() => {
-    if (isPlaying) {
+    setHasUserInteracted(true);
+    if (isPlayingRef.current) {
       pauseMusic();
     } else {
-      userExplicitlyPausedRef.current = false;
       playMusic();
     }
-  }, [isPlaying, pauseMusic, playMusic]);
+  }, [pauseMusic, playMusic]);
 
-  // Requirement: "website load hote ke sath jo bhi user scroll krega suru, vese hi music automatic on ho jana chahiye"
+  // Robust universal interaction & scroll listener
   useEffect(() => {
-    const handleFirstScroll = () => {
-      if (hasAutoPlayedRef.current || userExplicitlyPausedRef.current) return;
+    const audio = audioRef.current;
+    if (!audio) return;
 
-      const audio = audioRef.current;
-      if (!audio) return;
+    // Preload audio buffer immediately
+    try {
+      audio.load();
+    } catch {
+      // ignore
+    }
 
-      hasAutoPlayedRef.current = true;
-      fadeIn(audio);
+    const events = [
+      "scroll",
+      "wheel",
+      "touchstart",
+      "touchend",
+      "touchmove",
+      "pointerdown",
+      "pointerup",
+      "mousedown",
+      "mouseup",
+      "click",
+      "keydown",
+    ];
 
-      // Clean up scroll listeners once triggered
-      window.removeEventListener("scroll", handleFirstScroll);
-      window.removeEventListener("wheel", handleFirstScroll);
-      window.removeEventListener("touchmove", handleFirstScroll);
+    const tryAutoPlay = () => {
+      // If user deliberately paused, do not restart
+      if (userExplicitlyPausedRef.current) return;
+      if (isPlayingRef.current) return;
+
+      const p = audio.play();
+      if (p !== undefined) {
+        p.then(() => {
+          setIsPlaying(true);
+          isPlayingRef.current = true;
+          setHasUserInteracted(true);
+
+          // Fade in to gentle 35%
+          try {
+            audio.volume = 0.05;
+          } catch {
+            // ignore
+          }
+
+          if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
+          fadeIntervalRef.current = setInterval(() => {
+            try {
+              if (audio.volume < 0.35) {
+                audio.volume = Math.min(0.35, Number((audio.volume + 0.05).toFixed(2)));
+              } else {
+                if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
+              }
+            } catch {
+              if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
+            }
+          }, 100);
+
+          // Success: cleanup interaction listeners
+          events.forEach((ev) => {
+            window.removeEventListener(ev, tryAutoPlay, true);
+            document.removeEventListener(ev, tryAutoPlay, true);
+          });
+        }).catch(() => {
+          // Keep waiting for next gesture if passive scroll was blocked by Chrome policy
+        });
+      }
     };
 
-    window.addEventListener("scroll", handleFirstScroll, { passive: true });
-    window.addEventListener("wheel", handleFirstScroll, { passive: true });
-    window.addEventListener("touchmove", handleFirstScroll, { passive: true });
+    // Attach capturing listeners to both document and window for maximum responsiveness
+    events.forEach((ev) => {
+      window.addEventListener(ev, tryAutoPlay, { capture: true, passive: true });
+      document.addEventListener(ev, tryAutoPlay, { capture: true, passive: true });
+    });
+
+    // Also try immediately (some browsers allow autoplay if user has visited before or interacted with tab)
+    tryAutoPlay();
 
     return () => {
-      window.removeEventListener("scroll", handleFirstScroll);
-      window.removeEventListener("wheel", handleFirstScroll);
-      window.removeEventListener("touchmove", handleFirstScroll);
+      events.forEach((ev) => {
+        window.removeEventListener(ev, tryAutoPlay, true);
+        document.removeEventListener(ev, tryAutoPlay, true);
+      });
+      if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
     };
-  }, [fadeIn]);
+  }, []);
 
   return (
-    <AudioContext.Provider value={{ isPlaying, toggleSound, playMusic, pauseMusic }}>
+    <AudioContext.Provider
+      value={{
+        isPlaying,
+        toggleSound,
+        playMusic,
+        pauseMusic,
+        hasUserInteracted,
+      }}
+    >
+      {/* 
+        CRITICAL: Never use `display: none` (`hidden`) for background audio,
+        as WebKit/Safari will deactivate decoder pipelines on hidden elements.
+        Off-screen positioning with opacity 0 ensures 100% reliable decoding.
+      */}
+      <audio
+        ref={audioRef}
+        loop
+        preload="auto"
+        playsInline
+        style={{
+          position: "fixed",
+          top: "-9999px",
+          left: "-9999px",
+          width: "1px",
+          height: "1px",
+          opacity: 0,
+          pointerEvents: "none",
+        }}
+      >
+        <source src="/audio/wedding-instrumental.m4a" type="audio/mp4" />
+        <source src="/audio/wedding-instrumental.ogg" type="audio/ogg" />
+      </audio>
       {children}
     </AudioContext.Provider>
   );
 }
 
 export function useAudio() {
-  return useContext(AudioContext);
+  const context = useContext(AudioContext);
+  if (!context) {
+    throw new Error("useAudio must be used within an AudioProvider");
+  }
+  return context;
 }
-

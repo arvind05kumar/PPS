@@ -28,28 +28,28 @@ export function Logo({ variant = "horizontal", className = "", showLink = true }
 
       {variant === "horizontal" && (
         <div className="flex flex-col items-start justify-center flex-shrink-0">
-          <span className="text-[8.5px] uppercase tracking-[0.25em] text-studio-cream font-medium leading-none mb-0.5 pl-0.5">
+          <span className="text-[9px] uppercase tracking-[0.25em] text-studio-cream font-medium leading-none mb-1 pl-1 opacity-90">
             Jai Guru
           </span>
           <img
             src="/images/logo-transparent.png"
             alt="Bhaskendra Photography"
-            className="h-8 sm:h-9 2xl:h-10 w-auto object-contain hover:brightness-110 transition-all duration-300"
+            className="h-10 sm:h-12 2xl:h-14 w-auto object-contain hover:brightness-110 transition-all duration-300 filter drop-shadow-[0_0_10px_rgba(201,162,75,0.25)]"
           />
         </div>
       )}
 
       {variant === "full" && (
         <div className="flex flex-col items-center text-center">
-          <span className="text-[10px] uppercase tracking-[0.3em] text-studio-cream font-medium mb-1">
+          <span className="text-[10px] uppercase tracking-[0.35em] text-studio-cream font-medium mb-1.5 opacity-90">
             Jai Guru
           </span>
           <img
             src="/images/logo-transparent.png"
             alt="Bhaskendra Photography"
-            className="h-16 sm:h-20 w-auto object-contain hover:brightness-110 transition-all duration-300 filter drop-shadow-[0_0_15px_rgba(201,162,75,0.2)]"
+            className="h-20 sm:h-24 2xl:h-28 w-auto object-contain hover:brightness-110 transition-all duration-300 filter drop-shadow-[0_0_20px_rgba(201,162,75,0.35)]"
           />
-          <span className="text-[10px] tracking-[0.18em] text-studio-ivoryMuted/70 font-sans mt-2">
+          <span className="text-[11px] tracking-[0.2em] text-studio-ivoryMuted/80 font-sans mt-3 uppercase">
             Prasad Photo & Video Studio • Badi Khanjarpur
           </span>
         </div>
@@ -57,15 +57,15 @@ export function Logo({ variant = "horizontal", className = "", showLink = true }
 
       {variant === "preloader" && (
         <div className="flex flex-col items-center text-center">
-          <span className="text-xs uppercase tracking-[0.45em] text-studio-cream font-medium mb-2">
+          <span className="text-xs uppercase tracking-[0.45em] text-studio-cream font-medium mb-2.5 opacity-90">
             Jai Guru
           </span>
           <img
             src="/images/logo-transparent.png"
             alt="Bhaskendra Photography"
-            className="h-28 sm:h-32 w-auto object-contain filter drop-shadow-[0_0_25px_rgba(201,162,75,0.5)]"
+            className="h-32 sm:h-40 w-auto object-contain filter drop-shadow-[0_0_35px_rgba(201,162,75,0.6)]"
           />
-          <p className="text-xs tracking-[0.25em] text-studio-cream/80 uppercase mt-2">
+          <p className="text-xs tracking-[0.3em] text-studio-cream/90 uppercase mt-3 font-sans">
             Prasad Photo & Video Studio
           </p>
         </div>
